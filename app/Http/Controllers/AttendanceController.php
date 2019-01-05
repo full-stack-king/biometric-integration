@@ -6,6 +6,10 @@ use Biosync\Biosync;
 
 class AttendanceController extends Controller
 {
+    protected $ip;
+
+    protected $device;
+
     /**
      * Create a new controller instance.
      *
@@ -13,36 +17,22 @@ class AttendanceController extends Controller
      */
     public function __construct()
     {
-        //
+        $this->ip = env('DEVICE_IP1');
     }
 
     public function index()
     {
-        $attendance = \DB::select('select * from bio_metric_data');
+        $attendance = \DB::table('bio_metric_data')->paginate();
+        // $attendance = \DB::table('bio_metric_data')->orderBy('id', 'desc')->first();
         return $attendance;
     }
 
     public function store()
     {
+        info('===============================================');
         info('started');
         $now = \Carbon\Carbon::now()->toDateTimeString();
-        // dd($now);
-        $zk = new Biosync("192.168.1.7", 4370);
-
-        $ret = $zk->connect();
-        info('connected to device');
-        $zk->disableDevice();
-        info('disabled device');
-
-        info('getting attendance');
-        $attendance = $zk->getAttendance();
-        info('received attendance');
-
-        $zk->enableDevice();
-        info('activating device');
-        $zk->disconnect();
-        info('disconnected from device');
-
+        $attendance = $this->getAttendance();
         $users_chunk = array_chunk($attendance,5000);
         info('count($attendance): ' . count($attendance));
         info('count($users_chunk): ' . count($users_chunk));
@@ -51,8 +41,6 @@ class AttendanceController extends Controller
             info('inserting count($users): ' . count($users));
             $insert_users = [];
             foreach ($users as $user) {
-                // info('count($user): ' . count($user));
-                // print_r($user);die;
                 $insert_users[] = [
                     'entry_id' => null,
                     'type' => 'FP',
@@ -66,10 +54,35 @@ class AttendanceController extends Controller
             \DB::table('bio_metric_data')->insert($insert_users);
             info('inserted count($user): ' . count($users));
         }
-        // var_dump($users);
         info('ended');
         return ['success'];
     }
 
+    public function connect()
+    {
+        $this->device = new Biosync($this->ip, 4370);
+        $ret = $this->device->connect();
+        info('connected to device ' . $this->ip);
+        $this->device->disableDevice();
+        info('disabled device ' . $this->ip);
+    }
+
+    public function disconnect()
+    {
+        $this->device->enableDevice();
+        info('activating device ' . $this->ip);
+        $this->device->disconnect();
+        info('disconnected from device ' . $this->ip);
+    }
+
+    public function getAttendance()
+    {
+        $this->connect();
+        info('getting attendance ' . $this->ip);
+        $attendance = $this->device->getAttendance();
+        info('received attendance from ' . $this->ip);
+        $this->disconnect();
+        return $attendance;
+    }
     //
 }
