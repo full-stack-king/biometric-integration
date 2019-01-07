@@ -24,6 +24,7 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule)
     {
-        //
+        $schedule->call('App\Http\Controllers\AttendanceController@syncFirstFloor')
+                ->name('syncFirstFloor')->withoutOverlapping()->everyFiveMinutes();
     }
 }
