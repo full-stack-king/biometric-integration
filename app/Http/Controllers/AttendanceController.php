@@ -48,7 +48,7 @@ class AttendanceController extends Controller
         // info('count($users_chunk): ' . count($users_chunk));
         
         // foreach ($users_chunk as $users) {
-            info('inserting count($attendance): ' . count($attendance));
+            info('inserting into db');
             $insert_users = [];
             foreach ($attendance as $user) {
                 $user_entry_date = \Carbon\Carbon::parse($user[3]);
@@ -69,8 +69,7 @@ class AttendanceController extends Controller
             }
             // dd($insert_users);
             \DB::table('bio_metric_data')->insert($insert_users);
-            info('inserted count(attendance): ' . count($attendance));
-            info('inserted count($insert_users): ' . count($insert_users));
+            info('completed db insert');
         // }
         info('ended');
         return ['success'];
@@ -80,23 +79,6 @@ class AttendanceController extends Controller
     {
         $ip = env('DEVICE_IP2');
         $this->store($ip,1);
-    }
-
-    public function test()
-    {
-        $ip = env('DEVICE_IP2');
-        $this->store($ip,1);
-        // dd('ok');
-        /*info('starting test');
-        $this->ip = env('DEVICE_IP2');
-        $attendance = $this->getAttendance();
-        info('ending test');
-        dd(count($attendance));*/
-    }
-
-    public function excel()
-    {
-        # code...
     }
 
     public function syncFirstFloor()
